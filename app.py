@@ -12,6 +12,10 @@ CORS(app)
 # Load YOLO model
 model = YOLO('yolov8n.pt')  # Adjust model as needed
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "message": "API is running"}), 200
+
 @app.route('/api/detect', methods=['POST'])
 def detect_objects():
     if 'image' not in request.files:
@@ -49,4 +53,3 @@ def detect_objects():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
