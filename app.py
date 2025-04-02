@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 from ultralytics import YOLO
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 
@@ -13,22 +13,47 @@ CORS(app)
 def health_check():
     return jsonify({"status": "healthy", "message": "API is running"}), 200
 
-@app.route('/process-text', methods=['POST'])
-def process_text():
-    # Get the input JSON data
-    data = request.get_json()
+from flask import Flask, request, send_file
+from flask_cors import CORS
+from PIL import Image, ImageDraw, ImageFont
+import io
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+
+@app.route('/generate_image', methods=['POST'])
+def generate_image():
+    data = request.json
     
-    # Check if 'text' is provided in the request
-    if 'text' not in data:
-        return jsonify({'error': 'No text provided'}), 400
+    # Print all fields in the dictionary
+    print("Received Data:")
+    for key, value in data.items():
+        print(f"{key}: {value}")
     
-    input_text = data['text']
+    text = "\n".join([f"{key}: {value}" for key, value in data.items()])
     
-    # Example processing: Reverse the input text
-    output_text = input_text[::-1]
+    # Create an image
+    img = Image.new('RGB', (400, 200), color=(255, 255, 255))
+    draw = ImageDraw.Draw(img)
     
-    # Return the processed text as JSON
-    return jsonify({'input': input_text, 'output': output_text})
+    try:
+        font = ImageFont.truetype("arial.ttf", 16)  # Try to load Arial font
+    except:
+        font = ImageFont.load_default()
+    
+    # Draw text on image line by line
+    y_position = 10
+    for line in text.split("\n"):
+        draw.text((10, y_position), line, fill=(0, 0, 0), font=font)
+        y_position += 20
+    
+    # Save to a byte buffer
+    img_io = io.BytesIO()
+    img.save(img_io, 'PNG')
+    img_io.seek(0)
+    
+    return send_file(img_io, mimetype='image/png')
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
